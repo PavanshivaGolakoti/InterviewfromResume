@@ -1,0 +1,538 @@
+<!-- templates/interview.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Character with Speech</title>
+    <style>
+        #character-container {
+            position: relative;
+            width: 300px;
+            height: 400px;
+            margin: auto;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #character {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+        }
+
+        #question-container {
+            position: absolute;
+            bottom: 10%;
+            text-align: center;
+            width: 100%;
+        }
+
+        #question {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div id="character-container">
+        <img id="character" src="https://www.shareicon.net/data/2016/04/10/747371_man_512x512.png" alt="Virtual Character">
+        <div id="question-container">
+            <div id="question">Hello! Lets start the interview</div>
+        </div>
+    </div>
+
+    <button id="startRecording">Start Recording</button>
+    <button id="stopRecording" style="display: none;">Stop Recording</button>
+    <button id="nextQuestion">Next Question</button>
+    <button id="submitAnswers" style="display: none;">Submit Answers</button>
+
+    <form id="answersForm" action="/submit_answers" method="post" style="display: none;">
+        <input type="hidden" id="answersData" name="answersData">
+        <input type="submit" value="Submit">
+    </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+    var responses = {}; // Initialize responses object
+    var currentQuestionIndex = 0;
+    var questions = {{ questions | tojson }}; // Assuming questions are passed from Flask
+
+    function speak(text) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function listenForAnswer() {
+        var recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+        recognition.continuous = true;
+
+        recognition.onresult = function(event) {
+            var userAnswer = event.results[0][0].transcript;
+            document.getElementById('question').innerText = `You said: ${userAnswer}`;
+            // speak(`You said: ${userAnswer}`);
+
+            responses[questions[currentQuestionIndex]] = userAnswer;
+            console.log(responses)
+            // setTimeout(2000);
+        };
+
+        recognition.start();
+    }
+
+    function stopRecording() {
+        var recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+    recognition.stop(); // Stop speech recognition
+    document.getElementById('stopRecording').style.display = 'none';
+    document.getElementById('startRecording').style.display = 'inline-block';
+    document.getElementById('nextQuestion').style.display = 'inline-block';
+    }
+
+    function askNextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < questions.length) {
+            document.getElementById('question').innerText = questions[currentQuestionIndex];
+            speak(questions[currentQuestionIndex]);
+            listenForAnswer(); // Call listenForAnswer function to start listening for user's response
+        } else {
+            document.getElementById('question').innerText = "Interview completed!";
+            document.getElementById('submitAnswers').style.display = 'inline-block';
+        }
+    }
+
+    document.getElementById('startRecording').addEventListener('click', function() {
+        var recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.start();
+        document.getElementById('startRecording').style.display = 'none';
+        document.getElementById('stopRecording').style.display = 'inline-block';
+        document.getElementById('nextQuestion').style.display = 'none';
+        listenForAnswer(); // Call listenForAnswer function when the user starts recording
+    });
+
+    document.getElementById('stopRecording').addEventListener('click', stopRecording);
+
+    document.getElementById('nextQuestion').addEventListener('click', askNextQuestion);
+
+    document.getElementById('submitAnswers').addEventListener('click', function(event) {
+        event.preventDefault(); // Prevent default form submission behavior
+        document.getElementById('answersData').value = JSON.stringify(responses);
+        document.getElementById('answersForm').submit();
+    });
+
+    // Initial question spoken after a delay
+    setTimeout(() => {
+        var questionText = questions[currentQuestionIndex];
+        document.getElementById('question').innerText = questionText;
+        speak(questionText);
+        var recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.start();
+    }, 3000); // Change the question after 3 seconds (you can adjust this timing)
+});
+
+    </script>
+</body>
+</html>
+
+
+
+
+<!-- templates/interview.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Character with Speech</title>
+    <style>
+        #character-container {
+            position: relative;
+            width: 300px;
+            height: 400px;
+            margin: auto;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #character {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+        }
+
+        #question-container {
+            position: absolute;
+            bottom: 10%;
+            text-align: center;
+            width: 100%;
+        }
+
+        #question {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div id="character-container">
+        <img id="character" src="https://www.shareicon.net/data/2016/04/10/747371_man_512x512.png" alt="Virtual Character">
+        <div id="question-container">
+            <div id="question">Hello, Lets start the interview</div>
+        </div>
+    </div>
+
+    <button id="startRecording">Start Recording</button>
+    <button id="stopRecording" style="display: none;">Stop Recording</button>
+    <button id="nextQuestion">Next Question</button>
+    <button id="submitAnswers" style="display: none;">Submit Answers</button>
+
+    <form id="answersForm" action="/submit_answers" method="post" style="display: none;">
+        <input type="hidden" id="answersData" name="answersData">
+        <input type="submit" value="Submit">
+    </form>
+
+    <script>
+        var recognition;
+        var currentQuestionIndex = 0;
+        var questions = {{ questions | tojson }};
+        var responses = {};
+
+        // Function to speak the provided text
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Function to handle user responses using speech recognition
+        function listenForAnswer() {
+            recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+            recognition.continuous = false;
+
+            recognition.onresult = function(event) {
+                const userAnswer = event.results[0][0].transcript;
+                document.getElementById('question').innerText = `You said: ${userAnswer}`;
+                speak(`You said: ${userAnswer}`);
+
+                responses[questions[currentQuestionIndex]] = userAnswer;
+                console.log("Responses:", responses);
+                // Ask the next question after a short delay
+                setTimeout(askNextQuestion, 2000);
+            };
+
+            recognition.start();
+        }
+
+        // Function to stop recording
+        function stopRecording() {
+            recognition.stop();
+            document.getElementById('startRecording').style.display = 'inline-block';
+            document.getElementById('stopRecording').style.display = 'none';
+            document.getElementById('nextQuestion').style.display = 'inline-block';
+            document.getElementById('submitAnswers').style.display = 'inline-block';
+        }
+
+        // Ask the next question
+        function askNextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                document.getElementById('question').innerText = questions[currentQuestionIndex];
+                speak(questions[currentQuestionIndex]);
+                recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.start();
+            } else {
+                document.getElementById('question').innerText = "Interview completed!";
+                document.getElementById('submitAnswers').style.display = 'inline-block';
+            }
+        }
+
+        // Event listeners for buttons
+        document.getElementById('startRecording').addEventListener('click', function() {
+            recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.start();
+            document.getElementById('startRecording').style.display = 'none';
+            document.getElementById('stopRecording').style.display = 'inline-block';
+            document.getElementById('nextQuestion').style.display = 'none';
+        });
+
+        document.getElementById('stopRecording').addEventListener('click', stopRecording);
+
+        document.getElementById('nextQuestion').addEventListener('click', askNextQuestion);
+
+        document.getElementById('submitAnswers').addEventListener('click', function() {
+            document.getElementById('answersData').value = JSON.stringify(responses);
+            document.getElementById('answersForm').submit();
+        });
+
+        // Initial question spoken after a delay
+        setTimeout(() => {
+            const questionText = questions[currentQuestionIndex];
+            document.getElementById('question').innerText = questionText;
+            speak(questionText);
+            recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.start();
+        }, 3000); // Change the question after 3 seconds (you can adjust this timing)
+    </script>
+</body>
+</html> -->
+
+
+<!-- templates/interview.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Character with Speech</title>
+    <style>
+        #character-container {
+            position: relative;
+            width: 300px;
+            height: 400px;
+            margin: auto;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #character {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+        }
+
+        #question-container {
+            position: absolute;
+            bottom: 10%;
+            text-align: center;
+            width: 100%;
+        }
+
+        #question {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div id="character-container">
+        <img id="character" src="https://www.shareicon.net/data/2016/04/10/747371_man_512x512.png" alt="Virtual Character">
+        <div id="question-container">
+            <div id="question">Hello! How can I help you today?</div>
+        </div>
+    </div>
+
+    <button id="startRecording">Start Recording</button>
+    <button id="stopRecording" style="display: none;">Stop Recording</button>
+    <button id="nextQuestion">Next Question</button>
+
+    <script>
+        var recognition;
+        var currentQuestionIndex = 0;
+        var questions = {{ questions | tojson }};
+        var responses = {};
+
+        // Function to speak the provided text
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Function to handle user responses using speech recognition
+        function listenForAnswer() {
+            recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+            recognition.continuous = false;
+
+            recognition.onresult = function(event) {
+                const userAnswer = event.results[0][0].transcript;
+                document.getElementById('question').innerText = `You said: ${userAnswer}`;
+                speak(`You said: ${userAnswer}`);
+
+                responses[questions[currentQuestionIndex]] = userAnswer;
+
+                // Ask the next question after a short delay
+                setTimeout(askNextQuestion, 2000);
+            };
+
+            recognition.start();
+        }
+
+        // Function to stop recording
+        function stopRecording() {
+            recognition.stop();
+            document.getElementById('startRecording').style.display = 'inline-block';
+            document.getElementById('stopRecording').style.display = 'none';
+            document.getElementById('nextQuestion').style.display = 'inline-block';
+        }
+
+        // Ask the next question
+        function askNextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                document.getElementById('question').innerText = questions[currentQuestionIndex];
+                speak(questions[currentQuestionIndex]);
+                recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.start();
+            } else {
+                document.getElementById('question').innerText = "Interview completed!";
+            }
+        }
+
+        // Event listeners for buttons
+        document.getElementById('startRecording').addEventListener('click', function() {
+            recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.start();
+            document.getElementById('startRecording').style.display = 'none';
+            document.getElementById('stopRecording').style.display = 'inline-block';
+            document.getElementById('nextQuestion').style.display = 'none';
+        });
+
+        document.getElementById('stopRecording').addEventListener('click', stopRecording);
+
+        document.getElementById('nextQuestion').addEventListener('click', askNextQuestion);
+
+        // Initial question spoken after a delay
+        setTimeout(() => {
+            const questionText = questions[currentQuestionIndex];
+            document.getElementById('question').innerText = questionText;
+            speak(questionText);
+            recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.start();
+        }, 3000); // Change the question after 3 seconds (you can adjust this timing)
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+<!-- templates/interview.html -->
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Character with Speech</title>
+    <style>
+        #character-container {
+            position: relative;
+            width: 300px;
+            height: 400px;
+            margin: auto;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #character {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+        }
+
+        #question-container {
+            position: absolute;
+            bottom: 10%;
+            text-align: center;
+            width: 100%;
+        }
+
+        #question {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div id="character-container">
+        <img id="character" src="https://www.shareicon.net/data/2016/04/10/747371_man_512x512.png" alt="Virtual Character">
+        <div id="question-container">
+            <div id="question">Hello! How can I help you today?</div>
+        </div>
+    </div>
+
+    <script>
+        // Function to speak the provided text
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Function to handle user responses using speech recognition
+        function listenForAnswer() {
+            const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+
+            recognition.onresult = function(event) {
+                const userAnswer = event.results[0][0].transcript;
+                document.getElementById('question').innerText = `You said: ${userAnswer}`;
+                speak(`You said: ${userAnswer}`);
+
+                // Ask the next question after a short delay
+                setTimeout(askNextQuestion, 2000);
+            };
+
+            recognition.start();
+        }
+
+        // Ask the next question
+        function askNextQuestion() {
+            const questions = {{ questions | tojson }};
+
+            const randomIndex = Math.floor(Math.random() * questions.length);
+            const nextQuestion = questions[randomIndex];
+
+            document.getElementById('question').innerText = nextQuestion;
+            speak(nextQuestion);
+
+            // Listen for the user's response after a short delay
+            setTimeout(listenForAnswer, 2000);
+        }
+
+        // Initial question spoken after a delay
+        setTimeout(() => {
+            const questionText = "Hello! How can I help you today?";
+            document.getElementById('question').innerText = questionText;
+            speak(questionText);
+
+            // Listen for the user's response after a short delay
+            setTimeout(listenForAnswer, 2000);
+        }, 3000); // Change the question after 3 seconds (you can adjust this timing)
+    </script>
+</body>
+</html> -->

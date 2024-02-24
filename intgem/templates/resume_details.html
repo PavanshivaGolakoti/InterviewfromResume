@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .bb{
+            width: 40%;
+    height: 40px;
+    outline: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+        }
+    </style>
+    <title>Your Resume Details</title>
+</head>
+<body>
+    <h1>Hello<h3>good mnbh</h3></h1>
+    {{ details | safe }}
+    <form id="conduct_interview" action="/conduct_interview" method="post" enctype="multipart/form-data">
+        <input type="submit" value="Submit">
+    </form>
+</body>
+</html>
